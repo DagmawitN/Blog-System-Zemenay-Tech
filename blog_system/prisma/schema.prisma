@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -15,35 +14,38 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  role      String    @default("user") // "admin" or "user"
-  posts     Post[]
-  comments  Comment[]
-  likes     Like[]
+  id       String    @id @default(cuid())
+  name     String
+  image    String
+  email    String    @unique
+  password String
+  role     String    @default("user") // "admin" or "user"
+  posts    Post[]
+  comments Comment[]
+  likes    Like[]
 }
 
 model Category {
-  id    String  @id @default(cuid())
-  name  String  @unique
+  id    String @id @default(cuid())
+  name  String @unique
   posts Post[]
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  title       String
-  content     String
-  status      PostStatus @default(PUBLISHED)
-  views       Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id])
-  categoryId  String?
-  category    Category?  @relation(fields: [categoryId], references: [id])
-  comments    Comment[]
-  likes       Like[]
+  id         String     @id @default(cuid())
+  title      String
+  content    String
+  imageUrl   String?
+  status     PostStatus @default(PUBLISHED)
+  views      Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id])
+  categoryId String?
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  comments   Comment[]
+  likes      Like[]
 }
 
 model Comment {
@@ -57,11 +59,11 @@ model Comment {
 }
 
 model Like {
-  id      String @id @default(cuid())
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
-  postId  String
-  post    Post   @relation(fields: [postId], references: [id])
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
 }
 
 enum PostStatus {
