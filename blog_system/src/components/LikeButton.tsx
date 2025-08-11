@@ -13,7 +13,7 @@ export default function LikeButton({ postId, initialCount, likedByUser }: LikeBu
   const [liked, setLiked] = useState(likedByUser);
 
   const handleLike = async () => {
-    const res = await fetch(`/api/post/${postId}/likes`, { method: "POST" });
+    const res = await fetch(`/api/post/${postId}/like`, { method: "POST" });
     if (res.ok) {
       setLiked(!liked);
       setCount((prev) => (liked ? prev - 1 : prev + 1));

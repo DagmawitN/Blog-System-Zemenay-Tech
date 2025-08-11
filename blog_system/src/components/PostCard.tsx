@@ -9,7 +9,7 @@ export default function PostCard({ post }: { post: any }) {
 
   const handleLike = async () => {
     try {
-      const res = await fetch(`/api/post/${post.id}/likes`, { method: "POST" });
+      const res = await fetch(`/api/post/${post.id}/like`, { method: "POST" });
       if (res.ok) {
         setLikes((prev:number) => prev + 1);
       }
