@@ -7,11 +7,12 @@ import { authOptions } from "@/lib/auth";
 // GET single post
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         author: {
           select: { id: true, name: true, email: true, image: true },
@@ -42,7 +43,7 @@ export async function GET(
 // UPDATE single post (only author can edit)
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -53,14 +54,15 @@ export async function PUT(
   const { title, content, imageUrl, categoryId, status } = body;
 
   try {
+    const { id } = await params;
     // Verify post exists & belongs to user
-    const existing = await prisma.post.findUnique({ where: { id: params.id } });
+    const existing = await prisma.post.findUnique({ where: { id } });
     if (!existing || existing.authorId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const updated = await prisma.post.update({
-      where: { id: params.id },
+      where: { id },
       data: { title, content, imageUrl, categoryId, status },
     });
 
@@ -74,7 +76,7 @@ export async function PUT(
 //  DELETE single post (only author can delete)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -82,13 +84,14 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     // Verify post exists & belongs to user
-    const existing = await prisma.post.findUnique({ where: { id: params.id } });
+    const existing = await prisma.post.findUnique({ where: { id } });
     if (!existing || existing.authorId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.post.delete({ where: { id: params.id } });
+    await prisma.post.delete({ where: { id } });
     return NextResponse.json({ message: "Post deleted" });
   } catch (error) {
     console.error("DELETE /api/post/[id] error:", error);
