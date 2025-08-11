@@ -3,15 +3,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { PostListItem } from "@/app/page";
 
-export default function PostCard({ post }: { post: any }) {
-  const [likes, setLikes] = useState(post.likesCount || 0);
+type PostCardProps = { post: PostListItem & { likesCount?: number } };
+
+export default function PostCard({ post }: PostCardProps) {
+  const [likes, setLikes] = useState<number>(post.likesCount || 0);
 
   const handleLike = async () => {
     try {
-      const res = await fetch(`/api/post/${post.id}/likes`, { method: "POST" });
+      const res = await fetch(`/api/post/${post.id}/like`, { method: "POST" });
       if (res.ok) {
-        setLikes((prev:number) => prev + 1);
+        setLikes((prev: number) => prev + 1);
       }
     } catch (error) {
       console.error("Failed to like post", error);
@@ -21,6 +24,7 @@ export default function PostCard({ post }: { post: any }) {
   return (
     <div className="border p-4 rounded shadow-sm">
       {post.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={post.imageUrl}
           alt={post.title}

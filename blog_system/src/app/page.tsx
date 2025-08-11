@@ -2,7 +2,16 @@
 import PostCard from "@/components/PostCard";
 import UserMenu from "@/components/UserMenu"; // client component
 
-async function getPosts() {
+export type PostListItem = {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string | null;
+  likes?: Array<unknown>;
+  comments?: Array<unknown>;
+};
+
+async function getPosts(): Promise<PostListItem[]> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/post`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch posts");
@@ -23,7 +32,7 @@ export default async function HomePage() {
         {posts.length === 0 ? (
           <p>No posts yet.</p>
         ) : (
-          posts.map((post: any) => <PostCard key={post.id} post={post} />)
+          posts.map((post) => <PostCard key={post.id} post={post} />)
         )}
       </div>
     </div>
