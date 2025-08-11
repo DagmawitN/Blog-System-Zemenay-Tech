@@ -9,6 +9,7 @@ export type PostListItem = {
   imageUrl?: string | null;
   likes?: Array<unknown>;
   comments?: Array<unknown>;
+  _count?: { likes?: number; comments?: number };
 };
 
 async function getPosts(): Promise<PostListItem[]> {

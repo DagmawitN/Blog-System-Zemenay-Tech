@@ -5,10 +5,21 @@ import { useState } from "react";
 import Link from "next/link";
 import type { PostListItem } from "@/app/page";
 
-type PostCardProps = { post: PostListItem & { likesCount?: number } };
+type PostCardProps = {
+  post: PostListItem & {
+    _count?: { likes?: number; comments?: number };
+    likesCount?: number;
+  };
+};
 
 export default function PostCard({ post }: PostCardProps) {
-  const [likes, setLikes] = useState<number>(post.likesCount || 0);
+  const initialLikes =
+    (post._count?.likes ??
+      (Array.isArray(post.likes) ? post.likes.length : undefined) ??
+      post.likesCount ??
+      0) as number;
+
+  const [likes, setLikes] = useState<number>(initialLikes);
 
   const handleLike = async () => {
     try {
