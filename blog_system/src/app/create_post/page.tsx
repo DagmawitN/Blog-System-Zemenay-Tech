@@ -8,31 +8,41 @@ export default function CreatePostPage() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    categoryId: "",
   });
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Upload to Cloudinary
+  // Upload to Cloudinary (multiple)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!);
+    const uploadedUrls: string[] = [];
 
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!
+      );
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+      if (data.secure_url) {
+        uploadedUrls.push(data.secure_url);
       }
-    );
+    }
 
-    const data = await res.json();
-    setImageUrl(data.secure_url);
+    setImageUrls((prev) => [...prev, ...uploadedUrls]);
     setUploading(false);
   };
 
@@ -41,7 +51,7 @@ export default function CreatePostPage() {
     const res = await fetch("/api/post", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, imageUrl }),
+      body: JSON.stringify({ ...form, imageUrls }), // send array of images
     });
     if (res.ok) {
       router.push("/");
@@ -70,18 +80,23 @@ export default function CreatePostPage() {
           rows={5}
           required
         />
-        <input
-          type="text"
-          placeholder="Category ID"
-          value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          className="border w-full p-2"
-        />
-        <input type="file" onChange={handleImageUpload} />
+
+        <input type="file" multiple onChange={handleImageUpload} />
         {uploading && <p>Uploading...</p>}
-        {imageUrl && (
-          <img src={imageUrl} alt="Preview" className="w-full h-48 object-cover rounded" />
+
+        {imageUrls.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {imageUrls.map((url, idx) => (
+              <img
+                key={idx}
+                src={url}
+                alt={`Preview ${idx + 1}`}
+                className="w-full h-32 object-cover rounded"
+              />
+            ))}
+          </div>
         )}
+
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded"
           disabled={uploading}

@@ -1,6 +1,5 @@
-// app/page.tsx (Server Component)
 import PostCard from "@/components/PostCard";
-import UserMenu from "@/components/UserMenu"; // client component
+
 
 export type PostListItem = {
   id: string;
@@ -25,14 +24,22 @@ export default async function HomePage() {
     <div className="max-w-3xl mx-auto p-4">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Latest Posts</h1>
-        <UserMenu />
+  
       </header>
 
       <div className="space-y-4">
         {posts.length === 0 ? (
           <p>No posts yet.</p>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={{
+                ...post,
+                comments: post.comments as { id: string; content: string; authorName: string }[] | undefined,
+              }}
+            />
+          ))
         )}
       </div>
     </div>

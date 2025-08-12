@@ -25,37 +25,34 @@ model User {
   likes    Like[]
 }
 
-model Category {
-  id    String @id @default(cuid())
-  name  String @unique
-  posts Post[]
-}
 
 model Post {
   id         String     @id @default(cuid())
   title      String
   content    String
-  imageUrl   String?
+  imageUrl   String[]
   status     PostStatus @default(PUBLISHED)
   views      Int        @default(0)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   authorId   String
   author     User       @relation(fields: [authorId], references: [id])
-  categoryId String?
-  category   Category?  @relation(fields: [categoryId], references: [id])
   comments   Comment[]
   likes      Like[]
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User        @relation(fields: [authorId], references: [id])
   postId    String
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post        @relation(fields: [postId], references: [id])
+  parent    Comment?    @relation("CommentReplies", fields: [parentId], references: [id])
+  parentId  String?
+  replies   Comment[]   @relation("CommentReplies")
+  updatedAt DateTime    @updatedAt
 }
 
 model Like {

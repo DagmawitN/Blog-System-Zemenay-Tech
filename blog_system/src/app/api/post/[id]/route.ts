@@ -3,14 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-
-// GET single post
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+
+    // Increment views by 1
+    await prisma.post.update({
+      where: { id },
+      data: {
+        views: { increment: 1 },
+      },
+    });
+
+    // Fetch the post including related data
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
@@ -25,7 +33,7 @@ export async function GET(
             },
           },
         },
-        likes: true, // you can also just get count
+        likes: true,
       },
     });
 
@@ -40,7 +48,7 @@ export async function GET(
   }
 }
 
-// UPDATE single post (only author can edit)
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -51,7 +59,7 @@ export async function PUT(
   }
 
   const body = await req.json();
-  const { title, content, imageUrl, categoryId, status } = body;
+  const { title, content, imageUrl,  status } = body;
 
   try {
     const { id } = await params;
@@ -62,9 +70,16 @@ export async function PUT(
     }
 
     const updated = await prisma.post.update({
-      where: { id },
-      data: { title, content, imageUrl, categoryId, status },
-    });
+  where: { id },
+  data: {
+    title,
+    content,
+    imageUrl,
+    status,
+    updatedAt: new Date(),
+  },
+});
+
 
     return NextResponse.json(updated);
   } catch (error) {

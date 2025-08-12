@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-
-// Create a post
+// Create one or many posts
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -12,24 +11,45 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { title, content, imageUrl, categoryId } = body;
 
   try {
+
+    if (Array.isArray(body)) {
+      const formattedPosts = body.map((post) => ({
+        title: post.title,
+        content: post.content,
+        imageUrl: post.imageUrl || null,
+        authorId: session.user.id,
+        status: post.status || "PUBLISHED",
+      }));
+
+      const result = await prisma.post.createMany({
+        data: formattedPosts,
+      });
+
+      return NextResponse.json({ count: result.count });
+    }
+
+    const { title, content, imageUrl,  status } = body;
+
     const post = await prisma.post.create({
       data: {
         title,
         content,
-        imageUrl,
-        categoryId,
-        authorId: session.user.id,
-        status: "PUBLISHED",
+        imageUrl: imageUrl,
+         author: {
+      connect: { id: session.user.id }},
+        status: status || "PUBLISHED",
       },
     });
 
     return NextResponse.json(post);
   } catch (error) {
     console.error("POST /api/post error:", error);
-    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create post(s)" },
+      { status: 500 }
+    );
   }
 }
 
@@ -52,6 +72,9 @@ export async function GET() {
     return NextResponse.json(posts);
   } catch (error) {
     console.error("GET /api/post error:", error);
-    return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch posts" },
+      { status: 500 }
+    );
   }
 }

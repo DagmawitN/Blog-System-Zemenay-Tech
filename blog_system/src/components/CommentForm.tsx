@@ -4,25 +4,35 @@ import { useState } from "react";
 
 interface CommentFormProps {
   postId: string;
-  onCommentAdded: () => void; // callback to refresh data
+  parentId?: string;
+  onCommentAdded: (comment: CommentType) => void; // accept new comment/reply
 }
 
-export default function CommentForm({ postId, onCommentAdded }: CommentFormProps) {
+export type CommentType = {
+  id: string;
+  content: string;
+  authorName: string;
+  replies?: CommentType[];
+  parent?: { id: string };
+};
+
+export default function CommentForm({ postId, parentId, onCommentAdded }: CommentFormProps) {
   const [comment, setComment] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
 
-    const res = await fetch(`/api/post/${postId}/comments`, {
+    const res = await fetch(`/api/post/${postId}/comment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: comment }),
+      body: JSON.stringify({ postId, content: comment, parentId }),
     });
 
     if (res.ok) {
+      const newComment: CommentType = await res.json();
       setComment("");
-      onCommentAdded();
+      onCommentAdded(newComment);
     } else {
       alert("Failed to add comment");
     }
