@@ -32,21 +32,24 @@ export default function LikeButton({ postId, initialCount = 0, likedByUser = fal
   }, [postId]);
 
   const handleLike = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/post/${postId}/like`, { method: "POST" });
-      if (res.ok) {
-        setLiked((prev) => !prev);
-        setCount((prev) => (liked ? prev - 1 : prev + 1));
-      } else {
-        alert("You must be logged in to like this post.");
-      }
-    } catch (error) {
-      console.error("Error toggling like:", error);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const res = await fetch(`/api/post/${postId}/like`, { method: "POST" });
+    if (res.ok) {
+      setLiked((prevLiked) => {
+        setCount((prevCount) => prevLiked ? prevCount - 1 : prevCount + 1);
+        return !prevLiked;
+      });
+    } else {
+      alert("You must be logged in to like this post.");
     }
-  };
+  } catch (error) {
+    console.error("Error toggling like:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <button

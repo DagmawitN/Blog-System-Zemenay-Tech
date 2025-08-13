@@ -1,17 +1,20 @@
+// src/app/api/post/[id]/like/route.ts
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } } 
 ) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const userId = session.user.id;
-  const postId = params.id;
+  const postId = params.id; 
 
   // Check if like already exists
   const existingLike = await prisma.like.findFirst({
@@ -21,39 +24,47 @@ export async function POST(
   if (existingLike) {
     // Unlike
     await prisma.like.delete({ where: { id: existingLike.id } });
-    return NextResponse.json({ message: "Unliked" });
+    return NextResponse.json({ liked: false });
   }
 
   // Like
-  const like = await prisma.like.create({
+  await prisma.like.create({
     data: { postId, userId },
   });
 
-  return NextResponse.json(like);
+  return NextResponse.json({ liked: true });
 }
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> } // 👈 params can be a Promise
+  context: { params: { id: string } }
 ) {
-  const { id: postId } = await context.params; // 👈 await before using
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
+  try {
+    const postId = context.params.id;
 
-  // Count likes for the post
-  const likesCount = await prisma.like.count({
-    where: { postId },
-  });
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
 
-  // Check if the user liked this post
-  let likedByUser = false;
-  if (userId) {
-    const existingLike = await prisma.like.findFirst({
-      where: { postId, userId },
+    // Count total likes for the post
+    const likesCount = await prisma.like.count({
+      where: { postId },
     });
-    likedByUser = !!existingLike;
+
+    // Check if the current user liked the post
+    let likedByUser = false;
+    if (userId) {
+      const existingLike = await prisma.like.findFirst({
+        where: { postId, userId },
+      });
+      likedByUser = !!existingLike;
+    }
+
+    return NextResponse.json({ likesCount, likedByUser });
+  } catch (error) {
+    console.error("GET /api/post/[id]/like error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch likes" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ likesCount, likedByUser });
 }
-

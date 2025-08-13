@@ -21,7 +21,7 @@ export default function AdminDashboard() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/posts");
+      const res = await fetch("/api/admin/post");
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
       setPosts(data);
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
 
   const updateStatus = async (postId: string, status: string) => {
     try {
-      const res = await fetch(`/api/admin/posts/${postId}`, {
+      const res = await fetch(`/api/admin/post/${postId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
               <td className="border p-2">{post.author.name || post.author.email}</td>
               <td className="border p-2">{post.status}</td>
               <td className="border p-2 space-x-2">
-                {["PENDING", "PUBLISHED", "REJECTED"].map((s) => (
+                {["DRAFT", "PUBLISHED", "ARCHIVED"].map((s) => (
                   <button
                     key={s}
                     onClick={() => updateStatus(post.id, s)}

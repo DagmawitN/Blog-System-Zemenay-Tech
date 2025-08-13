@@ -1,20 +1,29 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/",
-    });
+    await signIn("credentials", { email, password, redirect: false });
   };
+
+  useEffect(() => {
+    if (session?.user?.role) {
+      if (session.user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+    }
+  }, [session, router]);
 
   return (
     <div className="max-w-md mx-auto mt-10">

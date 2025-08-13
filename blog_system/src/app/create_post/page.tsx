@@ -5,14 +5,10 @@ import { useRouter } from "next/navigation";
 
 export default function CreatePostPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    title: "",
-    content: "",
-  });
+  const [form, setForm] = useState({ title: "", content: "" });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Upload to Cloudinary (multiple)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -21,24 +17,24 @@ export default function CreatePostPage() {
     const uploadedUrls: string[] = [];
 
     for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append(
-        "upload_preset",
-        process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!
-      );
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!
+        );
 
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD}/image/upload`,
+          { method: "POST", body: formData }
+        );
 
-      const data = await res.json();
-      if (data.secure_url) {
-        uploadedUrls.push(data.secure_url);
+        const data = await res.json();
+        if (res.ok && data.secure_url) uploadedUrls.push(data.secure_url);
+      } catch (err) {
+        console.error("Upload error:", err);
+        alert(`Failed to upload ${file.name}`);
       }
     }
 
@@ -48,41 +44,74 @@ export default function CreatePostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/post", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, imageUrls }), // send array of images
-    });
-    if (res.ok) {
-      router.push("/");
-    } else {
+    if (!imageUrls.length) return alert("Upload at least one image");
+
+    try {
+      const res = await fetch("/api/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, imageUrls }),
+      });
+
+      if (res.ok) router.push("/");
+      else {
+        const data = await res.json();
+        console.error("Failed to create post:", data);
+        alert("Failed to create post");
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
       alert("Failed to create post");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Create New Post</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">Create New Post</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <input
           type="text"
           placeholder="Title"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="border w-full p-2"
+          className="border p-3 w-full rounded-full focus:outline-none focus:ring-2 focus:ring-black"
           required
         />
+
         <textarea
           placeholder="Content"
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
-          className="border w-full p-2"
-          rows={5}
+          className="border p-3 w-full rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+          rows={6}
           required
         />
 
-        <input type="file" multiple onChange={handleImageUpload} />
-        {uploading && <p>Uploading...</p>}
+        <div className="flex gap-4">
+          <label
+            htmlFor="file-upload"
+            className="cursor-pointer bg-gray-200 text-black px-6 py-2 rounded-full hover:bg-gray-300 transition"
+          >
+            Choose Images
+          </label>
+          <input
+            id="file-upload"
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+
+          <label
+            htmlFor="file-upload"
+            className="cursor-pointer bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition"
+          >
+            Add More Images
+          </label>
+        </div>
+
+        {uploading && <p className="text-gray-700">Uploading...</p>}
 
         {imageUrls.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mt-2">
@@ -91,15 +120,16 @@ export default function CreatePostPage() {
                 key={idx}
                 src={url}
                 alt={`Preview ${idx + 1}`}
-                className="w-full h-32 object-cover rounded"
+                className="w-full h-32 object-cover rounded border"
               />
             ))}
           </div>
         )}
 
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          type="submit"
           disabled={uploading}
+          className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 transition"
         >
           Create Post
         </button>

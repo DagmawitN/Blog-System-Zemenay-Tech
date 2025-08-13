@@ -3,42 +3,27 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// Create one or many posts
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
+
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
+  const { title, content, imageUrls, status } = body;
+
+  if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+    return NextResponse.json({ error: "No images provided" }, { status: 400 });
+  }
 
   try {
-
-    if (Array.isArray(body)) {
-      const formattedPosts = body.map((post) => ({
-        title: post.title,
-        content: post.content,
-        imageUrl: post.imageUrl || null,
-        authorId: session.user.id,
-        status: post.status || "PUBLISHED",
-      }));
-
-      const result = await prisma.post.createMany({
-        data: formattedPosts,
-      });
-
-      return NextResponse.json({ count: result.count });
-    }
-
-    const { title, content, imageUrl,  status } = body;
-
     const post = await prisma.post.create({
       data: {
         title,
         content,
-        imageUrl: imageUrl,
-         author: {
-      connect: { id: session.user.id }},
+        imageUrl: imageUrls, // save all uploaded URLs
+        authorId: session.user.id,
         status: status || "PUBLISHED",
       },
     });
@@ -47,12 +32,11 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("POST /api/post error:", error);
     return NextResponse.json(
-      { error: "Failed to create post(s)" },
+      { error: "Failed to create post" },
       { status: 500 }
     );
   }
 }
-
 // Get all posts
 export async function GET() {
   try {

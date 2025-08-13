@@ -10,10 +10,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const id = params.id; 
   const { status } = await req.json();
 
-  if (!["PENDING", "PUBLISHED", "REJECTED"].includes(status)) {
+  if (!["DRAFT", "PUBLISHED", "ARCHIVED"].includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     return NextResponse.json(updatedPost);
   } catch (error) {
-    console.error("PUT /api/admin/posts/[id] error:", error);
+    console.error("PUT /api/admin/post/[id] error:", error);
     return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
   }
 }
